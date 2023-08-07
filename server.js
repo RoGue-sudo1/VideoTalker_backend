@@ -1,14 +1,39 @@
+const twilio = require('twilio')
+const cors =require('cors')
 const express = require('express')
 const socket = require('socket.io')
-
-const PORT = 5000
+const { ExpressPeerServer } = require('peer')
+const groupCallHandler = require('./groupCallHandler')
+const { v4: uuidv4 } = require('uuid')
+const PORT = process.env.PORT || 5000
 
 const app = express()
+
+app.use(cors())
+
+app.get('/', (req, res) => {
+  res.send({ api: 'video-talker-api' })
+})
+
+app.get('/api/get-turn-credentials', (req, res) => {
+  const accountSid = 'ACdc74d9c98915649c635dfd490917e60b'
+  const authToken = '215e4cbddf1c312f7ef11498d74ad41a'
+  const client = twilio(accountSid, authToken)
+  client.tokens.create().then((token)=>res.send({token}))
+})
 
 const server = app.listen(PORT, () => {
   console.log(`server is listening on port ${PORT}`)
   console.log(`http://localhost:${PORT}`)
 })
+
+const peerServer = ExpressPeerServer(server, {
+  debug: true
+})
+
+app.use('/peerjs', peerServer)
+
+groupCallHandler.createPeerServerListeners(peerServer)
 
 const io = socket(server, {
   cors: {
@@ -18,6 +43,7 @@ const io = socket(server, {
 })
 
 let peers = []
+let groupCallRooms = []
 
 const broadcastEventTypes = {
   ACTIVE_USERS: 'ACTIVE_USERS',
@@ -41,6 +67,11 @@ io.on('connection', (socket) => {
       event: broadcastEventTypes.ACTIVE_USERS,
       activeUsers: peers
     })
+
+    io.sockets.emit('broadcast', {
+      event: broadcastEventTypes.GROUP_CALL_ROOMS,
+      groupCallRooms
+    })
   })
 
   socket.on('disconnect', () => {
@@ -49,6 +80,12 @@ io.on('connection', (socket) => {
     io.sockets.emit('broadcast', {
       event: broadcastEventTypes.ACTIVE_USERS,
       activeUsers: peers
+    })
+
+    groupCallRooms = groupCallRooms.filter(room => room.socketId !== socket.id)
+    io.sockets.emit('broadcast', {
+      event: broadcastEventTypes.GROUP_CALL_ROOMS,
+      groupCallRooms
     })
   })
 
@@ -90,9 +127,52 @@ io.on('connection', (socket) => {
     })
   })
 
-  socket.on('user-hanged-up',(data)=>{
-    console.log('handling user hanged up')
+  socket.on('user-hanged-up', (data) => {
     io.to(data.connectedUserSocketId).emit('user-hanged-up')
+  })
 
+  // listeners related with group call
+  socket.on('group-call-register', (data) => {
+    const roomId = uuidv4()
+    socket.join(roomId)
+
+    const newGroupCallRoom = {
+      peerId: data.peerId,
+      hostName: data.username,
+      socketId: socket.id,
+      roomId: roomId
+    }
+
+    groupCallRooms.push(newGroupCallRoom)
+    io.sockets.emit('broadcast', {
+      event: broadcastEventTypes.GROUP_CALL_ROOMS,
+      groupCallRooms
+    })
+  })
+
+  socket.on('group-call-join-request', (data) => {
+    io.to(data.roomId).emit('group-call-join-request', {
+      peerId: data.peerId,
+      streamId: data.streamId
+    })
+
+    socket.join(data.roomId)
+  })
+
+  socket.on('group-call-user-left', (data) => {
+    socket.leave(data.roomId)
+
+    io.to(data.roomId).emit('group-call-user-left', {
+      streamId: data.streamId
+    })
+  })
+
+  socket.on('group-call-closed-by-host', (data) => {
+    groupCallRooms = groupCallRooms.filter(room => room.peerId !== data.peerId)
+
+    io.sockets.emit('broadcast', {
+      event: broadcastEventTypes.GROUP_CALL_ROOMS,
+      groupCallRooms
+    })
   })
 })
