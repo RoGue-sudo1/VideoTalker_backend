@@ -42,7 +42,7 @@ groupCallHandler.createPeerServerListeners(peerServer)
 
 const io = socket(server, {
   cors: {
-    origin: 'https://videotalker.netlify.app',
+    origin: ['https://videotalker.netlify.app', 'http://localhost:3000'],
     methods: ['GET', 'POST']
   }
 })
