@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 5000
 
 const app = express()
 var corsOptions = {
-  origin: 'http://localhost:8080'
+  origin: 'https://videotalker.netlify.app/'
 }; app.use(cors(corsOptions));
 
 app.get('/', (req, res) => {
