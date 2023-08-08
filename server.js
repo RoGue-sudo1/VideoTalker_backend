@@ -1,15 +1,17 @@
 const twilio = require('twilio')
-const cors =require('cors')
+const cors = require('cors')
 const express = require('express')
 const socket = require('socket.io')
 const { ExpressPeerServer } = require('peer')
 const groupCallHandler = require('./groupCallHandler')
 const { v4: uuidv4 } = require('uuid')
+require('dotenv').config();
 const PORT = process.env.PORT || 5000
 
 const app = express()
-
-app.use(cors())
+var corsOptions = {
+  origin: 'http://localhost:8080'
+}; app.use(cors(corsOptions));
 
 app.get('/', (req, res) => {
   res.send({ api: 'video-talker-api' })
@@ -19,7 +21,7 @@ app.get('/api/get-turn-credentials', (req, res) => {
   const accountSid = 'ACdc74d9c98915649c635dfd490917e60b'
   const authToken = '1bd8e0bef2f1702191b881a8e824aaf4'
   const client = twilio(accountSid, authToken)
-  client.tokens.create().then((token)=>res.send({token}))
+  client.tokens.create().then((token) => res.send({ token }))
 })
 
 const server = app.listen(PORT, () => {
