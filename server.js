@@ -9,27 +9,27 @@ require('dotenv').config();
 const PORT = process.env.PORT || 5000
 
 const app = express()
-app.use(
-  cors({
-    origin: ["https://videotalker.netlify.app", "http://localhost:3000"],
-    methods: ["GET", "POST", "DELETE", "UPDATE", "PUT", "PATCH"],
-  })
-);
+// app.use(
+//   cors({
+//     origin: ["https://videotalker.netlify.app", "http://localhost:3000"],
+//     methods: ["GET", "POST", "DELETE", "UPDATE", "PUT", "PATCH"],
+//   })
+// );
+app.use(cors())
+app.get('/', (req, res) => {
+  res.send({ api: 'video-talker-api' })
+})
 
-// app.get('/', (req, res) => {
-//   res.send({ api: 'video-talker-api' })
-// })
-
-// app.get('/api/get-turn-credentials', (req, res) => {
-//   try {
-//     const accountSid = 'ACdc74d9c98915649c635dfd490917e60b'
-//     const authToken = '1bd8e0bef2f1702191b881a8e824aaf4'
-//     const client = twilio(accountSid, authToken)
-//     client.tokens.create().then((token) => res.send({ token }))
-//   } catch (error) {
-//     console.log(error);
-//   }
-// })
+app.get('/api/get-turn-credentials', (req, res) => {
+  try {
+    const accountSid = 'ACdc74d9c98915649c635dfd490917e60b'
+    const authToken = '1bd8e0bef2f1702191b881a8e824aaf4'
+    const client = twilio(accountSid, authToken)
+    client.tokens.create().then((token) => res.send({ token }))
+  } catch (error) {
+    console.log(error);
+  }
+})
 
 const server = app.listen(PORT, () => {
   console.log(`server is listening on port ${PORT}`)
@@ -46,7 +46,7 @@ groupCallHandler.createPeerServerListeners(peerServer)
 
 const io = socket(server, {
   cors: {
-    origin: ['https://videotalker.netlify.app', 'http://localhost:3000'],
+    origin: '*',
     methods: ['GET', 'POST']
   }
 })
