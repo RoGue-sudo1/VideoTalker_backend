@@ -9,12 +9,12 @@ require('dotenv').config();
 const PORT = process.env.PORT || 5000
 
 const app = express()
-// app.use(
-//   cors({
-//     origin: ["https://videotalker.netlify.app", "http://localhost:3000"],
-//     methods: ["GET", "POST", "DELETE", "UPDATE", "PUT", "PATCH"],
-//   })
-// );
+app.use(
+  cors({
+    origin: ["https://videotalker.netlify.app", "http://localhost:3000"],
+    methods: ["GET", "POST", "DELETE", "UPDATE", "PUT", "PATCH"],
+  })
+);
 
 // app.get('/', (req, res) => {
 //   res.send({ api: 'video-talker-api' })
