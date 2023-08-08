@@ -9,9 +9,12 @@ require('dotenv').config();
 const PORT = process.env.PORT || 5000
 
 const app = express()
-var corsOptions = {
-  origin: 'https://videotalker.netlify.app/'
-}; app.use(cors(corsOptions));
+app.use(
+  cors({
+    origin: ["https://videotalker.netlify.app/", "http://localhost:3000"],
+    methods: ["GET", "POST", "DELETE", "UPDATE", "PUT", "PATCH"],
+  })
+);
 
 app.get('/', (req, res) => {
   res.send({ api: 'video-talker-api' })
@@ -39,7 +42,7 @@ groupCallHandler.createPeerServerListeners(peerServer)
 
 const io = socket(server, {
   cors: {
-    origin: '*',
+    origin: 'https://videotalker.netlify.app/',
     methods: ['GET', 'POST']
   }
 })
